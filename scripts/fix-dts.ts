@@ -6,24 +6,11 @@
  * Run: npx ts-node scripts/fix-dts.ts
  */
 
-import { Project, ModuleDeclarationKind, StructureKind, SyntaxKind } from 'ts-morph';
+import { Project, ModuleDeclarationKind, StructureKind, SyntaxKind, type QualifiedName } from 'ts-morph';
 import * as path from 'path';
 
 const INPUT = path.join(__dirname, '..', 'build', 'js', 'verb-nurbs.generated.d.ts');
 const OUTPUT = path.join(__dirname, '..', 'build', 'js', 'verb-nurbs.d.ts');
-
-// Nested class paths that codegen produces due to its mapper bug.
-// Keys are the wrong 3-part path, values are the correct flattened path.
-const FLATTEN_MAP: Record<string, string> = {
-  'eval.Divide.CurveLengthSample': 'eval.CurveLengthSample',
-  'eval.Tess.AdaptiveRefinementOptions': 'eval.AdaptiveRefinementOptions',
-  'eval.Tess.AdaptiveRefinementNode': 'eval.AdaptiveRefinementNode',
-  'eval.Analyze.KnotMultiplicity': 'eval.KnotMultiplicity',
-  'eval.Intersect.IBoundingBoxTree': 'eval.IBoundingBoxTree',
-  'core.KdTree.KdPoint': 'core.KdPoint',
-  'core.KdTree.KdNode': 'core.KdNode',
-  'core.Minimizer.MinimizationResult': 'core.MinimizationResult',
-};
 
 const project = new Project({ useInMemoryFileSystem: true });
 
@@ -32,17 +19,27 @@ const raw = require('fs').readFileSync(INPUT, 'utf-8');
 const src = project.createSourceFile('input.d.ts', raw);
 
 // ---------------------------------------------------------------------------
-// 1. Flatten nested type references by walking all type nodes
+// 1. Flatten 3-part qualified names (e.g. eval.Divide.CurveLengthSample -> eval.CurveLengthSample)
 // ---------------------------------------------------------------------------
-// ts-morph's type reference nodes contain qualified names. We find all
-// identifiers and qualified names that match our flatten map and rewrite them.
-const fullText = src.getFullText();
-let patched = fullText;
-for (const [from, to] of Object.entries(FLATTEN_MAP)) {
-  // Replace as whole-word type references (not inside other words)
-  patched = patched.split(from).join(to);
+// Codegen produces nested paths like ns.Module.Type due to Haxe's module system.
+// The middle segment is the Haxe module name and should be dropped.
+// We discover these automatically by collecting the top-level namespace names
+// and finding all 3-part qualified name nodes that start with one.
+const topLevelNamespaces = new Set(src.getModules().map(m => m.getName()));
+
+const replacements: { node: QualifiedName; text: string }[] = [];
+for (const qn of src.getDescendantsOfKind(SyntaxKind.QualifiedName)) {
+  const text = qn.getText();
+  const parts = text.split('.');
+  if (parts.length === 3 && topLevelNamespaces.has(parts[0])) {
+    replacements.push({ node: qn, text: `${parts[0]}.${parts[2]}` });
+  }
 }
-src.replaceWithText(patched);
+console.log([...new Set(replacements.map(r => `${r.node.getText()} -> ${r.text}`))].join('\n'));
+// Replace in reverse order so earlier positions stay valid
+for (const { node, text } of replacements.reverse()) {
+  node.replaceWithText(text);
+}
 
 // ---------------------------------------------------------------------------
 // 2. Inject stub types that codegen cannot generate
@@ -51,7 +48,7 @@ src.replaceWithText(patched);
 // AsyncBase: promhx's internal base class, not @:expose'd
 const promhxNs = src.getModules().find(m => m.getName() === 'promhx');
 if (promhxNs) {
-  promhxNs.insertStatements(0, `\texport class AsyncBase<T> {}`);
+  promhxNs.insertStatements(0, `export class AsyncBase<T> {}`);
 }
 
 // IBoundingBoxTree: Haxe interface whose module name conflicts with eval.Intersect class
