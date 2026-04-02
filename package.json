@@ -13,8 +13,7 @@
   "module": "build/js//verb.es.js",
   "scripts": {
     "build": "haxe buildjs.hxml",
-    "build:hxtsdgen": "haxe buildjs-hxtsdgen.hxml",
-    "build:codegen": "haxe buildjs-codegen.hxml",
+    "build:types": "haxe buildjs-codegen.hxml && tsx scripts/fix-dts.ts",
     "package": "rollup --config",
     "test": "mocha",
     "test:types": "tsd"
@@ -52,11 +51,14 @@
     "@rollup/plugin-commonjs": "^26.0.1",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
+    "@types/node": "^25.5.0",
     "mocha": "^10.6.0",
     "rollup": "^4.18.0",
     "rollup-plugin-polyfill-node": "^0.13.0",
     "should": "^13.2.3",
+    "ts-morph": "^27.0.2",
     "tsd": "^0.33.0",
+    "tsx": "^4.21.0",
     "typescript": "^6.0.2"
   },
   "license": "MIT"
