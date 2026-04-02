@@ -9,137 +9,171 @@
 - The Haxe source uses `@:expose("namespace.ClassName")` on ~60 classes to make them
   available in the JS output under `verb.core.*`, `verb.eval.*`, `verb.geom.*`, `verb.exe.*`.
 
-## Generator Comparison: hxtsdgen vs codegen
+## Generator Results
 
-### [hxtsdgen](https://github.com/elsassph/hxtsdgen) (v0.3.0)
+### hxtsdgen - DOES NOT WORK
 
-**How it works:** Compiler plugin (`-lib hxtsdgen`) that generates a `.d.ts` alongside the JS
-output. It looks at `@:expose` metadata to decide what to export.
+hxtsdgen fails on verb-nurbs with two critical bugs:
+1. **Null abstract implementation** - crashes on `ab.impl.get()` when encountering
+   abstracts without implementations (Selector.hx:88)
+2. **Infinite recursion** - stack overflow in TypeRenderer.hx:51 on recursive types
+   like `KdNode<T>` (which has `left: KdNode<T>`)
+3. **Field-level `@:expose`** - Haxe 4.3+ rejects `@:expose` on static vars
+   (used in `Constants.hx` for TOLERANCE/EPSILON/VERSION)
 
-**Pros:**
-- Zero config - just add `-lib hxtsdgen` to build args
-- Understands Haxe type system natively (generics, typedefs, interfaces)
-- `-D hxtsdgen_namespaced` preserves the `core.*`, `eval.*`, `geom.*` package hierarchy
-- Can split types/enums into separate files
+**Verdict: Not viable** without significant patches to hxtsdgen itself.
 
-**Cons / Gaps for verb-nurbs:**
-- Only exports types with `@:expose` - types used by exposed functions are NOT
-  auto-exported. This means `MinimizationResult`, `SurfacePoint`, `IBoundingBoxTree`,
-  `ISerializable`, and the typedefs (`Point`, `Vector`, `Matrix`, `KnotArray`, `Tri`, `UV`)
-  would be missing unless we add `@:expose` to them.
-- Marked "WIP with limitations" - abstract enums, native properties not fully supported
-- Properties become `get_prop/set_prop` methods instead of TS properties
-- No module wrapper (`declare module 'verb-nurbs'`) - generates bare declarations
-- Doesn't understand the `verb` default export pattern (the JS wraps everything into
-  a `verb` object via `verb.js`/`footer.js`)
+### codegen - WORKS WELL (812 lines generated)
 
-### [codegen](https://github.com/yar3333/haxe-codegen) (v2.1.2)
+codegen successfully generates `build/js/verb-nurbs.generated.d.ts` with 812 lines
+covering all `@:expose`d types. Build command:
+```
+haxe buildjs-codegen.hxml
+```
 
-**How it works:** Haxe macro (`--macro CodeGen.typescriptExtern(...)`) that generates TS
-from Haxe source at compile time.
+## Concrete Comparison: codegen output vs hand-crafted .d.ts
 
-**Pros:**
-- More configurable - filter files (`+`/`-` rules), mapper files (`Type => OtherType`)
-- `@:noapi` annotation to explicitly exclude items
-- `CodeGen.exposeToRoot('package')` can auto-tag entire packages
-- `CodeGen.include/exclude('spec')` for fine-grained control
-- Can remap packages/classes via `CodeGen.map('source','target')`
+### What codegen gets RIGHT (no changes needed):
+- All class structures, inheritance, and `implements` relationships
+- Generic type parameters (`Pair<T1,T2>`, `Interval<T>`, `KdTree<T>`, etc.)
+- Constructor signatures and static methods
+- Optional parameters (`?` syntax)
+- JSDoc comments preserved from Haxe source
+- Correct namespace hierarchy (`core.*`, `eval.*`, `geom.*`, `exe.*`)
+- promhx types (Deferred, Promise, Stream, PublicStream)
+- All method signatures match the hand-crafted types
 
-**Cons / Gaps for verb-nurbs:**
-- Also defaults to only `@:expose`d types
-- Less documentation on TypeScript output format
-- May need significant mapper/filter config to match the desired output
-- Same module wrapper problem as hxtsdgen
+### What codegen gets WRONG (codemod fixes needed):
 
-### Verdict
+| Issue | codegen output | Hand-crafted | Fix |
+|-------|---------------|--------------|-----|
+| **Typedef references** | `verb.core.Data.Point` | `Point` or `number[]` | Resolve typedef refs to simple types |
+| **Nested class refs** | `eval.Divide.CurveLengthSample` | `eval.CurveLengthSample` | Flatten inner class paths |
+| **Nested class refs** | `eval.Tess.AdaptiveRefinementOptions` | `eval.AdaptiveRefinementOptions` | Flatten inner class paths |
+| **Nested class refs** | `eval.Tess.AdaptiveRefinementNode` | `eval.AdaptiveRefinementNode` | Flatten inner class paths |
+| **Nested class refs** | `eval.Analyze.KnotMultiplicity` | `eval.KnotMultiplicity` | Flatten inner class paths |
+| **Nested class refs** | `eval.Intersect.IBoundingBoxTree` | `eval.IBoundingBoxTree` | Flatten inner class paths |
+| **Nested class refs** | `core.KdTree.KdPoint` | `core.KdPoint` | Flatten inner class paths |
+| **Nested class refs** | `core.KdTree.KdNode` | `core.KdNode` | Flatten inner class paths |
+| **Nested class refs** | `core.Minimizer.MinimizationResult` | `core.MinimizationResult` | Flatten inner class paths |
+| **Nested class refs** | `verb.core.Intersections.SurfacePoint` | `eval.SurfacePoint` | Flatten + remap namespace |
+| **Interface refs** | `verb.geom.ICurve` | `geom.ICurve` | Strip `verb.` prefix |
+| **Interface refs** | `verb.geom.ISurface` | `geom.ISurface` | Strip `verb.` prefix |
+| **AsyncBase ref** | `promhx.base.AsyncBase<T>` | `AsyncBase<T>` (stub) | Add AsyncBase stub, strip `.base.` |
+| **No module wrapper** | bare `export namespace` | `declare module 'verb-nurbs' { ... }` | Wrap entire output |
+| **No typedefs** | (not emitted) | `type Point = number[]` etc. | Prepend typedef declarations |
+| **No default export** | (not emitted) | `Verb` interface + `export default verb` | Append module export |
+| **No type re-export** | (not emitted) | `export type { promhx, core, eval, exe, geom }` | Append type exports |
+| **Missing interfaces** | `ICurve`/`ISurface`/`ISerializable` not declared | Full interface declarations | Add interface declarations |
 
-**codegen is the better choice** because:
-1. Its `exposeToRoot` and `include`/`exclude` macros let us include types like
-   `MinimizationResult` and `SurfacePoint` without modifying the upstream Haxe source
-2. The mapper/filter system can handle the `Point = number[]` typedefs
-3. `@:noapi` gives us a clean way to exclude internal-only classes
+### What's MISSING from codegen output:
+- `ISerializable` interface (no body, just referenced via `implements`)
+- `ICurve` interface (full method signatures)
+- `ISurface` interface (full method signatures)
+- `IBoundingBoxTree<T>` interface (referenced in params but not declared as standalone)
+- `SurfacePoint` class (referenced by `AdaptiveRefinementNode` but not declared standalone)
+- `MinimizationResult` class (referenced but declared nested under `core.Minimizer.`)
+- Typedef declarations (`Point`, `Vector`, `Matrix`, `KnotArray`, `Tri`, `UV`)
 
-However, **neither generator will produce a drop-in replacement** for the hand-crafted types.
-A post-processing step (codemod) will be needed to:
-- Wrap output in `declare module 'verb-nurbs' { ... }`
-- Add the `Verb` interface and `export default verb` pattern
-- Fix any property getter/setter issues
-- Ensure the `promhx` namespace types are correct
+Note: codegen DOES include `SurfacePoint`, `MinimizationResult`, `KnotMultiplicity`,
+`CurveLengthSample`, `AdaptiveRefinementNode`, `AdaptiveRefinementOptions`, `KdPoint`,
+`KdNode`, and `IBoundingBoxTree` in the output - they're just nested under their
+parent class's namespace (e.g., `core.Minimizer.MinimizationResult`). The interfaces
+`ICurve`/`ISurface`/`ISerializable` are truly absent.
 
-## Implementation Plan
+## Revised Implementation Plan
 
 ### Phase 1: Type Testing (DONE)
-- [x] Add `tsd` + `typescript` as devDependencies
-- [x] Add `"types"` field to `package.json`
-- [x] Create `test-d/verb-nurbs.test-d.ts` with comprehensive type assertions
-- [x] Add `npm run test:types` script
+- [x] `tsd` + `typescript` devDependencies
+- [x] `"types"` field in `package.json`
+- [x] `test-d/verb-nurbs.test-d.ts` with comprehensive type assertions
+- [x] `npm run test:types` script
 
-### Phase 2: Try Generators (needs network/haxe environment)
-- [ ] Install `hxtsdgen` via haxelib, run `haxe buildjs-hxtsdgen.hxml`
-- [ ] Install `codegen` via haxelib, run `haxe buildjs-codegen.hxml`
-- [ ] Compare both outputs against `verb-nurbs.d.ts` - identify specific gaps
-- [ ] Choose the generator that gets closest to the hand-crafted types
+### Phase 2: Generator Evaluation (DONE)
+- [x] hxtsdgen: crashes with null access + stack overflow -- **not viable**
+- [x] codegen: works, produces 812 lines, good foundation -- **chosen approach**
 
-### Phase 3: Add Missing `@:expose` / `@:noapi` Annotations
-These types are in the hand-crafted `.d.ts` but lack `@:expose`:
+### Phase 3: Post-Processing Script (`scripts/fix-dts.js`)
 
-| Type | File | Action |
-|------|------|--------|
-| `MinimizationResult` | `src/verb/core/Minimizer.hx:147` | Add `@:expose("core.MinimizationResult")` |
-| `SurfacePoint` | `src/verb/core/Intersections.hx:138` | Add `@:expose("eval.SurfacePoint")` |
-| `IBoundingBoxTree<T>` | `src/verb/eval/Intersect.hx:1196` | Add `@:expose("eval.IBoundingBoxTree")` |
-| `ISerializable` | `src/verb/core/Serialization.hx:12` | Add `@:expose("geom.ISerializable")` |
+A Node.js script that transforms codegen output into the final `.d.ts`. These are
+primarily **string replacements**, not AST transforms:
 
-These types are in Haxe but intentionally NOT in the `.d.ts` (internal-only):
+1. **Resolve typedef references** (regex replacements):
+   ```
+   verb.core.Data.Point    → Point  (or number[])
+   verb.core.Data.Vector   → Vector (or number[])
+   verb.core.Data.Matrix   → Matrix (or number[][])
+   verb.core.Data.KnotArray → KnotArray (or number[])
+   verb.core.Data.Tri      → Tri    (or number[])
+   verb.core.Data.UV       → UV     (or number[])
+   ```
 
-| Type | File | Reason |
-|------|------|--------|
-| `ArrayExtensions` | `src/verb/core/ArrayExtensions.hx` | Compile-time `using` extensions |
-| `BinaryHeap<T>` | `src/verb/core/KdTree.hx:152` | Internal to KdTree |
-| `Binomial` | `src/verb/core/Binomial.hx` | Internal math |
-| `*BoundingBoxTree` (6 classes) | `src/verb/core/*.hx` | Internal BBTree implementations |
-| `ThreadPool` | `src/verb/exe/ThreadPool.hx` | Internal threading |
-| `Verb` | `src/verb/Verb.hx` | Entry point, not a public API |
+2. **Flatten nested class references** (regex replacements):
+   ```
+   eval.Divide.CurveLengthSample     → eval.CurveLengthSample
+   eval.Tess.AdaptiveRefinementOptions → eval.AdaptiveRefinementOptions
+   eval.Tess.AdaptiveRefinementNode   → eval.AdaptiveRefinementNode
+   eval.Analyze.KnotMultiplicity      → eval.KnotMultiplicity
+   eval.Intersect.IBoundingBoxTree    → eval.IBoundingBoxTree
+   core.KdTree.KdPoint               → core.KdPoint
+   core.KdTree.KdNode                → core.KdNode
+   core.Minimizer.MinimizationResult  → core.MinimizationResult
+   verb.core.Intersections.SurfacePoint → eval.SurfacePoint
+   ```
 
-If using codegen, these can be excluded via `@:noapi` or filter rules rather than
-modifying Haxe source.
+3. **Strip `verb.` prefix from interface refs**:
+   ```
+   verb.geom.ICurve    → geom.ICurve
+   verb.geom.ISurface  → geom.ISurface
+   ```
 
-### Phase 4: Post-Processing Codemod
-Create a script (`scripts/fix-dts.ts` or `scripts/fix-dts.js`) that transforms the
-generator output into the final `verb-nurbs.d.ts`:
+4. **Fix promhx base ref**:
+   ```
+   promhx.base.AsyncBase → AsyncBase
+   ```
 
-1. **Module wrapper**: Wrap in `declare module 'verb-nurbs' { ... }`
-2. **Typedefs**: Ensure `Point`, `Vector`, `Matrix`, `KnotArray`, `Tri`, `UV` are
-   declared both at top level and in `core` namespace
-3. **Default export**: Add the `Verb` interface + `export default verb` pattern
-4. **Namespace exports**: Add `export type { promhx, core, eval, exe, geom }`
-5. **Property fixups**: If generator emits `get_X()/set_X()`, convert to TS properties
-6. **promhx types**: The promhx library types may not generate well - may need a
-   static `promhx.d.ts` section that gets prepended
+5. **Prepend** typedef declarations + `AsyncBase` stub
+6. **Append** interface declarations (`ICurve`, `ISurface`, `ISerializable`)
+7. **Wrap** in `declare module 'verb-nurbs' { ... }`
+8. **Append** `Verb` interface + default export + type re-exports
+
+### Phase 4: Haxe Source Changes (optional, for upstream)
+
+To improve codegen output quality, these `@:expose` additions would help:
+
+| Type | File | Proposed annotation |
+|------|------|---------------------|
+| `MinimizationResult` | `core/Minimizer.hx:147` | `@:expose("core.MinimizationResult")` |
+| `SurfacePoint` | `core/Intersections.hx:138` | `@:expose("eval.SurfacePoint")` |
+
+Field-level `@:expose` in `Constants.hx` should be removed (incompatible with
+Haxe 4.3+). The class-level `@:expose("core.Constants")` already makes
+`TOLERANCE`/`EPSILON`/`VERSION` accessible via `verb.core.Constants.X`.
 
 ### Phase 5: CI Integration
-- [ ] Add build script: `npm run build:types` that runs generator + codemod
-- [ ] Add to CI: run `npm run build:types && npm run test:types`
-- [ ] Ensure types are regenerated on every Haxe source change
+- [ ] `npm run build:types` = `haxe buildjs-codegen.hxml && node scripts/fix-dts.js`
+- [ ] `npm run test:types` validates the output
+- [ ] CI runs both on every Haxe source change
 
-## Build Files Created
+## Build Files
 
-- `buildjs-hxtsdgen.hxml` - Haxe build with hxtsdgen plugin
-- `buildjs-codegen.hxml` - Haxe build with codegen macro
-- `test-d/verb-nurbs.test-d.ts` - Type tests
+- `buildjs-hxtsdgen.hxml` - hxtsdgen build (broken, kept for reference)
+- `buildjs-codegen.hxml` - codegen build (working)
+- `build/js/verb-nurbs.generated.d.ts` - raw codegen output (812 lines)
+- `build/js/verb-nurbs.d.ts` - hand-crafted types (1503 lines, the gold standard)
+- `test-d/verb-nurbs.test-d.ts` - type tests
 - `tsconfig.json` - TypeScript config for type tests
 
 ## Open Questions
 
-1. **Should we contribute `@:expose` additions upstream?** Adding expose to
-   `MinimizationResult`, `SurfacePoint`, etc. changes the JS output (adds them to the
-   global scope). This may be unwanted upstream. Alternative: use codegen's include
-   macros to generate types without modifying source.
+1. **Typedef resolution strategy**: Should the codemod resolve to simple types
+   (`number[]`) or keep named aliases (`Point`)? Named aliases are more readable
+   but require declaring the types. Current hand-crafted approach uses named aliases.
 
-2. **promhx types**: The promhx library is old and unmaintained. Should the generated
-   types include the full promhx API, or just the subset used by verb-nurbs async methods?
-   The hand-crafted types include a fairly complete promhx namespace.
+2. **Interface generation**: codegen doesn't emit interfaces at all. We need to
+   either: (a) hardcode them in the codemod, (b) extract them from Haxe source
+   with a separate tool, or (c) add `@:expose` to them upstream.
 
-3. **genes as alternative?** The [genes](https://github.com/benmerckx/genes) library
-   generates both ES6 modules AND TypeScript defs. It's more modern but would require
-   restructuring the build to use ES6 module output, which is a bigger change.
+3. **promhx types**: Since promhx is unmaintained and verb-nurbs is the only
+   consumer, consider replacing the full promhx namespace with just the subset
+   used (Promise, Deferred, Stream, PublicStream).
