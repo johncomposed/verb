@@ -8,12 +8,16 @@
     "url": "https://github.com/pboyer/verb.git"
   },
   "main": "build/js/verb.js",
+  "types": "build/js/verb-nurbs.d.ts",
   "unpkg": "build/js/verb.min.js",
   "module": "build/js//verb.es.js",
   "scripts": {
     "build": "haxe buildjs.hxml",
+    "build:hxtsdgen": "haxe buildjs-hxtsdgen.hxml",
+    "build:codegen": "haxe buildjs-codegen.hxml",
     "package": "rollup --config",
-    "test": "mocha"
+    "test": "mocha",
+    "test:types": "tsd"
   },
   "keywords": [
     "NURBS",
@@ -51,7 +55,9 @@
     "mocha": "^10.6.0",
     "rollup": "^4.18.0",
     "rollup-plugin-polyfill-node": "^0.13.0",
-    "should": "^13.2.3"
+    "should": "^13.2.3",
+    "tsd": "^0.33.0",
+    "typescript": "^6.0.2"
   },
   "license": "MIT"
 }

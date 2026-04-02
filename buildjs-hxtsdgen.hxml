@@ -1,0 +1,9 @@
+-lib promhx
+-lib hxtsdgen
+-main verb.Verb
+-cp src
+-js build/js/verbHaxe.js
+-dce std
+# hxtsdgen will generate build/js/verbHaxe.d.ts alongside the JS output
+# Use namespaced mode to preserve the package hierarchy (core.*, eval.*, geom.*, etc.)
+-D hxtsdgen_namespaced

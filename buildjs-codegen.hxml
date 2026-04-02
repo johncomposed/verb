@@ -1,0 +1,7 @@
+-lib promhx
+-lib codegen
+-main verb.Verb
+-cp src
+-js build/js/verbHaxe.js
+-dce std
+--macro CodeGen.typescriptExtern('build/js/verb-nurbs.generated.d.ts')
