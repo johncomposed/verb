@@ -1,0 +1,18 @@
+# Resolve Haxe typedefs to TypeScript types
+verb.core.Data.Point => number[]
+verb.core.Data.Vector => number[]
+verb.core.Data.Matrix => number[][]
+verb.core.Data.KnotArray => number[]
+verb.core.Data.Tri => number[]
+verb.core.Data.UV => number[]
+
+# Strip verb. prefix from interface references
+verb.geom.ICurve => geom.ICurve
+verb.geom.ISurface => geom.ISurface
+
+# Fix non-exposed type references
+verb.core.Intersections.SurfacePoint => eval.SurfacePoint
+verb.core.Serialization.ISerializable => geom.ISerializable
+
+# Fix promhx base class reference
+promhx.base.AsyncBase => promhx.AsyncBase

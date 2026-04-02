@@ -1,6 +1,6 @@
 export namespace promhx
 {
-	export class Deferred<T> extends promhx.base.AsyncBase<T>
+	export class Deferred<T> extends promhx.AsyncBase<T>
 	{
 		constructor();
 		/**
@@ -21,7 +21,7 @@ export namespace promhx
 		publicStream() : promhx.PublicStream<T>;
 	}
 	
-	export class Promise<T> extends promhx.base.AsyncBase<T>
+	export class Promise<T> extends promhx.AsyncBase<T>
 	{
 		constructor(d?:promhx.Deferred<T>);
 		/**
@@ -32,7 +32,7 @@ export namespace promhx
 		 add a wait function directly to the Promise instance.
 		 */
 		then<A>(f:(arg:T) => A) : promhx.Promise<A>;
-		unlink(to:promhx.base.AsyncBase<any>) : void;
+		unlink(to:promhx.AsyncBase<any>) : void;
 		pipe<A>(f:(arg:T) => promhx.Promise<A>) : promhx.Promise<A>;
 		/**
 		 Pipes an error back into a normal type.
@@ -56,7 +56,7 @@ export namespace promhx
 		static promise<T>(_val:T) : promhx.Promise<T>;
 	}
 	
-	export class Stream<T> extends promhx.base.AsyncBase<T>
+	export class Stream<T> extends promhx.AsyncBase<T>
 	{
 		constructor(d?:promhx.Deferred<T>);
 		/**
@@ -106,7 +106,7 @@ export namespace promhx
 		 Transforms an iterable of streams into a single stream which resolves
 		 to an array of values.
 		 */
-		static wheneverAll<T>(itb:Iterable<promhx.base.AsyncBase<T>>) : promhx.Stream<T[]>;
+		static wheneverAll<T>(itb:Iterable<promhx.AsyncBase<T>>) : promhx.Stream<T[]>;
 		/**
 		 Concatenates all the streams in the iterable argument to a single stream.  See
 		 the [concat] instance method.
@@ -131,28 +131,41 @@ export namespace promhx
 
 export namespace geom
 {
-	export class NurbsCurve extends core.SerializableBase implements verb.geom.ICurve
+	interface ISerializable
+	{
+		serialize() : string;
+	}
+	
+	interface ICurve extends geom.ISerializable
+	{
+		asNurbs() : core.NurbsCurveData;
+		domain() : core.Interval<number>;
+		point(u:number) : number[];
+		derivatives(u:number, numDerivs?:number) : number[][];
+	}
+	
+	export class NurbsCurve extends core.SerializableBase implements geom.ICurve
 	{
 		constructor(data:core.NurbsCurveData);
 		degree() : number;
-		knots() : verb.core.Data.KnotArray;
-		controlPoints() : verb.core.Data.Point[];
+		knots() : number[];
+		controlPoints() : number[][];
 		weights() : number[];
 		asNurbs() : core.NurbsCurveData;
 		clone() : geom.NurbsCurve;
 		domain() : core.Interval<number>;
-		transform(mat:verb.core.Data.Matrix) : geom.NurbsCurve;
-		transformAsync(mat:verb.core.Data.Matrix) : promhx.Promise<geom.NurbsCurve>;
-		point(u:number) : verb.core.Data.Point;
-		pointAsync(u:number) : promhx.Promise<verb.core.Data.Point>;
-		tangent(u:number) : verb.core.Data.Vector;
-		tangentAsync(u:number) : promhx.Promise<verb.core.Data.Vector>;
-		derivatives(u:number, numDerivs?:number) : verb.core.Data.Vector[];
-		derivativesAsync(u:number, numDerivs?:number) : promhx.Promise<verb.core.Data.Vector[]>;
-		closestPoint(pt:verb.core.Data.Point) : verb.core.Data.Point;
-		closestPointAsync(pt:verb.core.Data.Point) : promhx.Promise<verb.core.Data.Point>;
-		closestParam(pt:verb.core.Data.Point) : number;
-		closestParamAsync(pt:any) : promhx.Promise<verb.core.Data.Point>;
+		transform(mat:number[][]) : geom.NurbsCurve;
+		transformAsync(mat:number[][]) : promhx.Promise<geom.NurbsCurve>;
+		point(u:number) : number[];
+		pointAsync(u:number) : promhx.Promise<number[]>;
+		tangent(u:number) : number[];
+		tangentAsync(u:number) : promhx.Promise<number[]>;
+		derivatives(u:number, numDerivs?:number) : number[][];
+		derivativesAsync(u:number, numDerivs?:number) : promhx.Promise<number[][]>;
+		closestPoint(pt:number[]) : number[];
+		closestPointAsync(pt:number[]) : promhx.Promise<number[]>;
+		closestParam(pt:number[]) : number;
+		closestParamAsync(pt:any) : promhx.Promise<number[]>;
 		length() : number;
 		lengthAsync() : promhx.Promise<number>;
 		lengthAtParam(u:number) : number;
@@ -167,18 +180,18 @@ export namespace geom
 		splitAsync(u:number) : promhx.Promise<geom.NurbsCurve[]>;
 		reverse() : geom.NurbsCurve;
 		reverseAsync() : promhx.Promise<geom.NurbsCurve>;
-		tessellate(tolerance?:number) : verb.core.Data.Point[];
-		tessellateAsync(tolerance?:number) : promhx.Promise<verb.core.Data.Point[]>;
-		static byKnotsControlPointsWeights(degree:number, knots:verb.core.Data.KnotArray, controlPoints:verb.core.Data.Point[], weights?:number[]) : geom.NurbsCurve;
-		static byPoints(points:verb.core.Data.Point[], degree?:number) : geom.NurbsCurve;
+		tessellate(tolerance?:number) : number[][];
+		tessellateAsync(tolerance?:number) : promhx.Promise<number[][]>;
+		static byKnotsControlPointsWeights(degree:number, knots:number[], controlPoints:number[][], weights?:number[]) : geom.NurbsCurve;
+		static byPoints(points:number[][], degree?:number) : geom.NurbsCurve;
 	}
 	
 	export class Arc extends geom.NurbsCurve
 	{
-		constructor(center:verb.core.Data.Point, xaxis:verb.core.Data.Vector, yaxis:verb.core.Data.Vector, radius:number, minAngle:number, maxAngle:number);
-		center() : verb.core.Data.Point;
-		xaxis() : verb.core.Data.Vector;
-		yaxis() : verb.core.Data.Vector;
+		constructor(center:number[], xaxis:number[], yaxis:number[], radius:number, minAngle:number, maxAngle:number);
+		center() : number[];
+		xaxis() : number[];
+		yaxis() : number[];
 		radius() : number;
 		minAngle() : number;
 		maxAngle() : number;
@@ -186,37 +199,46 @@ export namespace geom
 	
 	export class BezierCurve extends geom.NurbsCurve
 	{
-		constructor(points:verb.core.Data.Point[], weights?:number[]);
+		constructor(points:number[][], weights?:number[]);
 	}
 	
 	export class Circle extends geom.Arc
 	{
-		constructor(center:verb.core.Data.Point, xaxis:verb.core.Data.Vector, yaxis:verb.core.Data.Vector, radius:number);
+		constructor(center:number[], xaxis:number[], yaxis:number[], radius:number);
 	}
 	
-	export class NurbsSurface extends core.SerializableBase implements verb.geom.ISurface
+	interface ISurface extends geom.ISerializable
+	{
+		asNurbs() : core.NurbsSurfaceData;
+		domainU() : core.Interval<number>;
+		domainV() : core.Interval<number>;
+		point(u:number, v:number) : number[];
+		derivatives(u:number, v:number, numDerivs?:number) : number[][][];
+	}
+	
+	export class NurbsSurface extends core.SerializableBase implements geom.ISurface
 	{
 		constructor(data:core.NurbsSurfaceData);
 		degreeU() : number;
 		degreeV() : number;
 		knotsU() : number[];
 		knotsV() : number[];
-		controlPoints() : verb.core.Data.Point[][];
-		weights() : verb.core.Data.Point[];
+		controlPoints() : number[][][];
+		weights() : number[][];
 		asNurbs() : core.NurbsSurfaceData;
 		clone() : geom.NurbsSurface;
 		domainU() : core.Interval<number>;
 		domainV() : core.Interval<number>;
-		point(u:number, v:number) : verb.core.Data.Point;
-		pointAsync(u:number, v:number) : promhx.Promise<verb.core.Data.Point>;
-		normal(u:number, v:number) : verb.core.Data.Point;
-		normalAsync(u:number, v:number) : promhx.Promise<verb.core.Data.Vector[][]>;
-		derivatives(u:number, v:number, numDerivs?:number) : verb.core.Data.Vector[][];
-		derivativesAsync(u:number, v:number, numDerivs?:number) : promhx.Promise<verb.core.Data.Vector[][]>;
-		closestParam(pt:verb.core.Data.Point) : verb.core.Data.UV;
-		closestParamAsync(pt:verb.core.Data.Point) : promhx.Promise<verb.core.Data.UV>;
-		closestPoint(pt:verb.core.Data.Point) : verb.core.Data.Point;
-		closestPointAsync(pt:verb.core.Data.Point) : promhx.Promise<verb.core.Data.Point>;
+		point(u:number, v:number) : number[];
+		pointAsync(u:number, v:number) : promhx.Promise<number[]>;
+		normal(u:number, v:number) : number[];
+		normalAsync(u:number, v:number) : promhx.Promise<number[][][]>;
+		derivatives(u:number, v:number, numDerivs?:number) : number[][][];
+		derivativesAsync(u:number, v:number, numDerivs?:number) : promhx.Promise<number[][][]>;
+		closestParam(pt:number[]) : number[];
+		closestParamAsync(pt:number[]) : promhx.Promise<number[]>;
+		closestPoint(pt:number[]) : number[];
+		closestPointAsync(pt:number[]) : promhx.Promise<number[]>;
 		split(u:number, useV?:boolean) : geom.NurbsSurface[];
 		splitAsync(u:number, useV?:boolean) : promhx.Promise<geom.NurbsSurface[]>;
 		reverse(useV?:boolean) : geom.NurbsSurface;
@@ -227,93 +249,93 @@ export namespace geom
 		boundariesAsync(options?:eval.Tess.AdaptiveRefinementOptions) : promhx.Promise<geom.NurbsCurve[]>;
 		tessellate(options?:eval.Tess.AdaptiveRefinementOptions) : core.MeshData;
 		tessellateAsync(options?:eval.Tess.AdaptiveRefinementOptions) : promhx.Promise<core.MeshData>;
-		transform(mat:verb.core.Data.Matrix) : geom.NurbsSurface;
-		transformAsync(mat:verb.core.Data.Matrix) : promhx.Promise<geom.NurbsSurface>;
-		static byKnotsControlPointsWeights(degreeU:number, degreeV:number, knotsU:verb.core.Data.KnotArray, knotsV:verb.core.Data.KnotArray, controlPoints:verb.core.Data.Point[][], weights?:number[][]) : geom.NurbsSurface;
-		static byCorners(point0:verb.core.Data.Point, point1:verb.core.Data.Point, point2:verb.core.Data.Point, point3:verb.core.Data.Point) : geom.NurbsSurface;
-		static byLoftingCurves(curves:verb.geom.ICurve[], degreeV?:number) : geom.NurbsSurface;
+		transform(mat:number[][]) : geom.NurbsSurface;
+		transformAsync(mat:number[][]) : promhx.Promise<geom.NurbsSurface>;
+		static byKnotsControlPointsWeights(degreeU:number, degreeV:number, knotsU:number[], knotsV:number[], controlPoints:number[][][], weights?:number[][]) : geom.NurbsSurface;
+		static byCorners(point0:number[], point1:number[], point2:number[], point3:number[]) : geom.NurbsSurface;
+		static byLoftingCurves(curves:geom.ICurve[], degreeV?:number) : geom.NurbsSurface;
 	}
 	
 	export class ConicalSurface extends geom.NurbsSurface
 	{
-		constructor(axis:verb.core.Data.Vector, xaxis:verb.core.Data.Vector, base:verb.core.Data.Point, height:number, radius:number);
-		axis() : verb.core.Data.Vector;
-		xaxis() : verb.core.Data.Vector;
-		base() : verb.core.Data.Point;
+		constructor(axis:number[], xaxis:number[], base:number[], height:number, radius:number);
+		axis() : number[];
+		xaxis() : number[];
+		base() : number[];
 		height() : number;
 		radius() : number;
 	}
 	
 	export class CylindricalSurface extends geom.NurbsSurface
 	{
-		constructor(axis:verb.core.Data.Vector, xaxis:verb.core.Data.Vector, base:verb.core.Data.Point, height:number, radius:number);
-		axis() : verb.core.Data.Vector;
-		xaxis() : verb.core.Data.Vector;
-		base() : verb.core.Data.Point;
+		constructor(axis:number[], xaxis:number[], base:number[], height:number, radius:number);
+		axis() : number[];
+		xaxis() : number[];
+		base() : number[];
 		height() : number;
 		radius() : number;
 	}
 	
 	export class EllipseArc extends geom.NurbsCurve
 	{
-		constructor(center:verb.core.Data.Point, xaxis:verb.core.Data.Vector, yaxis:verb.core.Data.Vector, minAngle:number, maxAngle:number);
-		center() : verb.core.Data.Point;
-		xaxis() : verb.core.Data.Vector;
-		yaxis() : verb.core.Data.Vector;
+		constructor(center:number[], xaxis:number[], yaxis:number[], minAngle:number, maxAngle:number);
+		center() : number[];
+		xaxis() : number[];
+		yaxis() : number[];
 		minAngle() : number;
 		maxAngle() : number;
 	}
 	
 	export class Ellipse extends geom.EllipseArc
 	{
-		constructor(center:verb.core.Data.Point, xaxis:verb.core.Data.Vector, yaxis:verb.core.Data.Vector);
+		constructor(center:number[], xaxis:number[], yaxis:number[]);
 	}
 	
 	export class ExtrudedSurface extends geom.NurbsSurface
 	{
-		constructor(profile:verb.geom.ICurve, direction:verb.core.Data.Vector);
-		profile() : verb.geom.ICurve;
-		direction() : verb.core.Data.Vector;
+		constructor(profile:geom.ICurve, direction:number[]);
+		profile() : geom.ICurve;
+		direction() : number[];
 	}
 	
 	export class Intersect
 	{
-		static curves(first:verb.geom.ICurve, second:verb.geom.ICurve, tol?:number) : core.CurveCurveIntersection[];
-		static curvesAsync(first:verb.geom.ICurve, second:verb.geom.ICurve, tol?:number) : promhx.Promise<core.CurveCurveIntersection[]>;
-		static curveAndSurface(curve:verb.geom.ICurve, surface:verb.geom.ISurface, tol?:number) : core.CurveSurfaceIntersection[];
-		static curveAndSurfaceAsync(curve:verb.geom.ICurve, surface:verb.geom.ISurface, tol?:number) : promhx.Promise<core.CurveSurfaceIntersection[]>;
-		static surfaces(first:verb.geom.ISurface, second:verb.geom.ISurface, tol?:number) : geom.NurbsCurve[];
-		static surfacesAsync(first:verb.geom.ISurface, second:verb.geom.ISurface, tol?:number) : promhx.Promise<geom.NurbsCurve[]>;
+		static curves(first:geom.ICurve, second:geom.ICurve, tol?:number) : core.CurveCurveIntersection[];
+		static curvesAsync(first:geom.ICurve, second:geom.ICurve, tol?:number) : promhx.Promise<core.CurveCurveIntersection[]>;
+		static curveAndSurface(curve:geom.ICurve, surface:geom.ISurface, tol?:number) : core.CurveSurfaceIntersection[];
+		static curveAndSurfaceAsync(curve:geom.ICurve, surface:geom.ISurface, tol?:number) : promhx.Promise<core.CurveSurfaceIntersection[]>;
+		static surfaces(first:geom.ISurface, second:geom.ISurface, tol?:number) : geom.NurbsCurve[];
+		static surfacesAsync(first:geom.ISurface, second:geom.ISurface, tol?:number) : promhx.Promise<geom.NurbsCurve[]>;
 	}
 	
 	export class Line extends geom.NurbsCurve
 	{
-		constructor(start:verb.core.Data.Point, end:verb.core.Data.Point);
-		start() : verb.core.Data.Point;
-		end() : verb.core.Data.Point;
+		constructor(start:number[], end:number[]);
+		start() : number[];
+		end() : number[];
 	}
 	
 	export class RevolvedSurface extends geom.NurbsSurface
 	{
-		constructor(profile:geom.NurbsCurve, center:verb.core.Data.Point, axis:verb.core.Data.Vector, angle:number);
-		profile() : verb.geom.ICurve;
-		center() : verb.core.Data.Point;
-		axis() : verb.core.Data.Vector;
+		constructor(profile:geom.NurbsCurve, center:number[], axis:number[], angle:number);
+		profile() : geom.ICurve;
+		center() : number[];
+		axis() : number[];
 		angle() : number;
 	}
 	
 	export class SphericalSurface extends geom.NurbsSurface
 	{
-		constructor(center:verb.core.Data.Point, radius:number);
-		center() : verb.core.Data.Point;
+		constructor(center:number[], radius:number);
+		center() : number[];
 		radius() : number;
 	}
 	
 	export class SweptSurface extends geom.NurbsSurface
 	{
-		constructor(profile:verb.geom.ICurve, rail:verb.geom.ICurve);
-		profile() : verb.geom.ICurve;
-		rail() : verb.geom.ICurve;
+		constructor(profile:geom.ICurve, rail:geom.ICurve);
+		profile() : geom.ICurve;
+		rail() : geom.ICurve;
 	}
 }
 
@@ -335,14 +357,25 @@ export namespace exe
 
 export namespace eval
 {
+	export class SurfacePoint
+	{
+		constructor(point:number[], normal:number[], uv:number[], id?:number, degen?:boolean);
+		uv : number[];
+		point : number[];
+		normal : number[];
+		id : number;
+		degen : boolean;
+		static fromUv(u:number, v:number) : eval.SurfacePoint;
+	}
+	
 	export class Analyze
 	{
-		static knotMultiplicities(knots:verb.core.Data.KnotArray) : eval.Analyze.KnotMultiplicity[];
+		static knotMultiplicities(knots:number[]) : eval.Analyze.KnotMultiplicity[];
 		static isRationalSurfaceClosed(surface:core.NurbsSurfaceData, uDir?:boolean) : boolean;
-		static rationalSurfaceClosestPoint(surface:core.NurbsSurfaceData, p:verb.core.Data.Point) : verb.core.Data.Point;
-		static rationalSurfaceClosestParam(surface:core.NurbsSurfaceData, p:verb.core.Data.Point) : verb.core.Data.UV;
-		static rationalCurveClosestPoint(curve:core.NurbsCurveData, p:verb.core.Data.Point) : verb.core.Data.Point;
-		static rationalCurveClosestParam(curve:core.NurbsCurveData, p:verb.core.Data.Point) : number;
+		static rationalSurfaceClosestPoint(surface:core.NurbsSurfaceData, p:number[]) : number[];
+		static rationalSurfaceClosestParam(surface:core.NurbsSurfaceData, p:number[]) : number[];
+		static rationalCurveClosestPoint(curve:core.NurbsCurveData, p:number[]) : number[];
+		static rationalCurveClosestParam(curve:core.NurbsCurveData, p:number[]) : number;
 		static rationalCurveParamAtArcLength(curve:core.NurbsCurveData, len:number, tol?:number, beziers?:core.NurbsCurveData[], bezierLengths?:number[]) : number;
 		static rationalBezierCurveParamAtArcLength(curve:core.NurbsCurveData, len:number, tol?:number, totalLength?:number) : number;
 		static rationalCurveArcLength(curve:core.NurbsCurveData, u?:number, gaussDegIncrease?:number) : number;
@@ -385,47 +418,47 @@ export namespace eval
 		static rationalCurveTangent(curve:core.NurbsCurveData, u:number) : number[];
 		static rationalSurfaceNormal(surface:core.NurbsSurfaceData, u:number, v:number) : number[];
 		static rationalSurfaceDerivatives(surface:core.NurbsSurfaceData, u:number, v:number, numDerivs?:number) : number[][][];
-		static rationalSurfacePoint(surface:core.NurbsSurfaceData, u:number, v:number) : verb.core.Data.Point;
-		static rationalCurveDerivatives(curve:core.NurbsCurveData, u:number, numDerivs?:number) : verb.core.Data.Point[];
-		static rationalCurvePoint(curve:core.NurbsCurveData, u:number) : verb.core.Data.Point;
-		static surfaceDerivatives(surface:core.NurbsSurfaceData, u:number, v:number, numDerivs:number) : verb.core.Data.Point[][];
-		static surfaceDerivativesGivenNM(n:number, m:number, surface:core.NurbsSurfaceData, u:number, v:number, numDerivs:number) : verb.core.Data.Point[][];
-		static surfacePoint(surface:core.NurbsSurfaceData, u:number, v:number) : verb.core.Data.Point;
-		static surfacePointGivenNM(n:number, m:number, surface:core.NurbsSurfaceData, u:number, v:number) : verb.core.Data.Point;
-		static curveRegularSamplePoints(crv:core.NurbsCurveData, divs:number) : verb.core.Data.Point[];
-		static curveRegularSamplePoints2(crv:core.NurbsCurveData, divs:number) : verb.core.Data.Point[];
+		static rationalSurfacePoint(surface:core.NurbsSurfaceData, u:number, v:number) : number[];
+		static rationalCurveDerivatives(curve:core.NurbsCurveData, u:number, numDerivs?:number) : number[][];
+		static rationalCurvePoint(curve:core.NurbsCurveData, u:number) : number[];
+		static surfaceDerivatives(surface:core.NurbsSurfaceData, u:number, v:number, numDerivs:number) : number[][][];
+		static surfaceDerivativesGivenNM(n:number, m:number, surface:core.NurbsSurfaceData, u:number, v:number, numDerivs:number) : number[][][];
+		static surfacePoint(surface:core.NurbsSurfaceData, u:number, v:number) : number[];
+		static surfacePointGivenNM(n:number, m:number, surface:core.NurbsSurfaceData, u:number, v:number) : number[];
+		static curveRegularSamplePoints(crv:core.NurbsCurveData, divs:number) : number[][];
+		static curveRegularSamplePoints2(crv:core.NurbsCurveData, divs:number) : number[][];
 		static rationalSurfaceRegularSampleDerivatives(surface:core.NurbsSurfaceData, divsU:number, divsV:number, numDerivs:number) : number[][][][][];
 		static surfaceRegularSampleDerivatives(surface:core.NurbsSurfaceData, divsU:number, divsV:number, numDerivs:number) : number[][][][][];
-		static rationalSurfaceRegularSamplePoints(surface:core.NurbsSurfaceData, divsU:number, divsV:number) : verb.core.Data.Point[][];
-		static surfaceRegularSamplePoints(surface:core.NurbsSurfaceData, divsU:number, divsV:number) : verb.core.Data.Point[][];
-		static curveDerivatives(crv:core.NurbsCurveData, u:number, numDerivs:number) : verb.core.Data.Point[];
-		static curveDerivativesGivenN(n:number, curve:core.NurbsCurveData, u:number, numDerivs:number) : verb.core.Data.Point[];
-		static curvePoint(curve:core.NurbsCurveData, u:number) : verb.core.Data.Point;
+		static rationalSurfaceRegularSamplePoints(surface:core.NurbsSurfaceData, divsU:number, divsV:number) : number[][][];
+		static surfaceRegularSamplePoints(surface:core.NurbsSurfaceData, divsU:number, divsV:number) : number[][][];
+		static curveDerivatives(crv:core.NurbsCurveData, u:number, numDerivs:number) : number[][];
+		static curveDerivativesGivenN(n:number, curve:core.NurbsCurveData, u:number, numDerivs:number) : number[][];
+		static curvePoint(curve:core.NurbsCurveData, u:number) : number[];
 		static areValidRelations(degree:number, num_controlPoints:number, knots_length:number) : boolean;
-		static curvePointGivenN(n:number, curve:core.NurbsCurveData, u:number) : verb.core.Data.Point;
-		static volumePoint(volume:core.VolumeData, u:number, v:number, w:number) : verb.core.Data.Point;
-		static volumePointGivenNML(volume:core.VolumeData, n:number, m:number, l:number, u:number, v:number, w:number) : verb.core.Data.Point;
-		static derivativeBasisFunctions(u:number, degree:number, knots:verb.core.Data.KnotArray) : number[][];
-		static derivativeBasisFunctionsGivenNI(knotIndex:number, u:number, p:number, n:number, knots:verb.core.Data.KnotArray) : number[][];
-		static basisFunctions(u:number, degree:number, knots:verb.core.Data.KnotArray) : number[];
-		static basisFunctionsGivenKnotSpanIndex(knotSpan_index:number, u:number, degree:number, knots:verb.core.Data.KnotArray) : number[];
+		static curvePointGivenN(n:number, curve:core.NurbsCurveData, u:number) : number[];
+		static volumePoint(volume:core.VolumeData, u:number, v:number, w:number) : number[];
+		static volumePointGivenNML(volume:core.VolumeData, n:number, m:number, l:number, u:number, v:number, w:number) : number[];
+		static derivativeBasisFunctions(u:number, degree:number, knots:number[]) : number[][];
+		static derivativeBasisFunctionsGivenNI(knotIndex:number, u:number, p:number, n:number, knots:number[]) : number[][];
+		static basisFunctions(u:number, degree:number, knots:number[]) : number[];
+		static basisFunctionsGivenKnotSpanIndex(knotSpan_index:number, u:number, degree:number, knots:number[]) : number[];
 		static knotSpan(degree:number, u:number, knots:number[]) : number;
 		static knotSpanGivenN(n:number, degree:number, u:number, knots:number[]) : number;
-		static dehomogenize(homoPoint:verb.core.Data.Point) : verb.core.Data.Point;
-		static rational1d(homoPoints:verb.core.Data.Point[]) : verb.core.Data.Point[];
-		static rational2d(homoPoints:verb.core.Data.Point[][]) : verb.core.Data.Point[][];
-		static weight1d(homoPoints:verb.core.Data.Point[]) : number[];
-		static weight2d(homoPoints:verb.core.Data.Point[][]) : number[][];
-		static dehomogenize1d(homoPoints:verb.core.Data.Point[]) : verb.core.Data.Point[];
-		static dehomogenize2d(homoPoints:verb.core.Data.Point[][]) : verb.core.Data.Point[][];
-		static homogenize1d(controlPoints:verb.core.Data.Point[], weights?:number[]) : verb.core.Data.Point[];
-		static homogenize2d(controlPoints:verb.core.Data.Point[][], weights?:number[][]) : verb.core.Data.Point[][];
+		static dehomogenize(homoPoint:number[]) : number[];
+		static rational1d(homoPoints:number[][]) : number[][];
+		static rational2d(homoPoints:number[][][]) : number[][][];
+		static weight1d(homoPoints:number[][]) : number[];
+		static weight2d(homoPoints:number[][][]) : number[][];
+		static dehomogenize1d(homoPoints:number[][]) : number[][];
+		static dehomogenize2d(homoPoints:number[][][]) : number[][][];
+		static homogenize1d(controlPoints:number[][], weights?:number[]) : number[][];
+		static homogenize2d(controlPoints:number[][][], weights?:number[][]) : number[][][];
 	}
 	
 	export class Intersect
 	{
 		static surfaces(surface0:core.NurbsSurfaceData, surface1:core.NurbsSurfaceData, tol:number) : core.NurbsCurveData[];
-		static surfacesAtPointWithEstimate(surface0:core.NurbsSurfaceData, surface1:core.NurbsSurfaceData, uv1:verb.core.Data.UV, uv2:verb.core.Data.UV, tol:number) : core.SurfaceSurfaceIntersectionPoint;
+		static surfacesAtPointWithEstimate(surface0:core.NurbsSurfaceData, surface1:core.NurbsSurfaceData, uv1:number[], uv2:number[], tol:number) : core.SurfaceSurfaceIntersectionPoint;
 		static meshes(mesh0:core.MeshData, mesh1:core.MeshData, bbtree0?:eval.Intersect.IBoundingBoxTree<number>, bbtree1?:eval.Intersect.IBoundingBoxTree<number>) : core.MeshIntersectionPoint[][];
 		static meshSlices(mesh:core.MeshData, min:number, max:number, step:number) : core.MeshIntersectionPoint[][][];
 		static makeMeshIntersectionPolylines(segments:core.Interval<core.MeshIntersectionPoint>[]) : core.MeshIntersectionPoint[][];
@@ -437,13 +470,13 @@ export namespace eval
 		static triangles(mesh0:core.MeshData, faceIndex0:number, mesh1:core.MeshData, faceIndex1:number) : core.Interval<core.MeshIntersectionPoint>;
 		static clipRayInCoplanarTriangle(ray:core.Ray, mesh:core.MeshData, faceIndex:number) : core.Interval<core.CurveTriPoint>;
 		static mergeTriangleClipIntervals(clip1:core.Interval<core.CurveTriPoint>, clip2:core.Interval<core.CurveTriPoint>, mesh1:core.MeshData, faceIndex1:number, mesh2:core.MeshData, faceIndex2:number) : core.Interval<core.MeshIntersectionPoint>;
-		static planes(origin0:verb.core.Data.Point, normal0:verb.core.Data.Vector, origin1:verb.core.Data.Point, normal1:verb.core.Data.Vector) : core.Ray;
-		static threePlanes(n0:verb.core.Data.Point, d0:number, n1:verb.core.Data.Point, d1:number, n2:verb.core.Data.Point, d2:number) : verb.core.Data.Point;
+		static planes(origin0:number[], normal0:number[], origin1:number[], normal1:number[]) : core.Ray;
+		static threePlanes(n0:number[], d0:number, n1:number[], d1:number, n2:number[], d2:number) : number[];
 		static polylines(polyline0:core.PolylineData, polyline1:core.PolylineData, tol:number) : core.CurveCurveIntersection[];
-		static segments(a0:verb.core.Data.Point, a1:verb.core.Data.Point, b0:verb.core.Data.Point, b1:verb.core.Data.Point, tol:number) : core.CurveCurveIntersection;
-		static rays(a0:verb.core.Data.Point, a:verb.core.Data.Point, b0:verb.core.Data.Point, b:verb.core.Data.Point) : core.CurveCurveIntersection;
-		static segmentWithTriangle(p0:verb.core.Data.Point, p1:verb.core.Data.Point, points:verb.core.Data.Point[], tri:verb.core.Data.Tri) : core.TriSegmentIntersection;
-		static segmentAndPlane(p0:verb.core.Data.Point, p1:verb.core.Data.Point, v0:verb.core.Data.Point, n:verb.core.Data.Point) : { p : number; };
+		static segments(a0:number[], a1:number[], b0:number[], b1:number[], tol:number) : core.CurveCurveIntersection;
+		static rays(a0:number[], a:number[], b0:number[], b:number[]) : core.CurveCurveIntersection;
+		static segmentWithTriangle(p0:number[], p1:number[], points:number[][], tri:number[]) : core.TriSegmentIntersection;
+		static segmentAndPlane(p0:number[], p1:number[], v0:number[], n:number[]) : { p : number; };
 	}
 	
 	export class Make
@@ -453,28 +486,28 @@ export namespace eval
 		static surfaceIsocurve(surface:core.NurbsSurfaceData, u:number, useV?:boolean) : core.NurbsCurveData;
 		static loftedSurface(curves:core.NurbsCurveData[], degreeV?:number) : core.NurbsSurfaceData;
 		static clonedCurve(curve:core.NurbsCurveData) : core.NurbsCurveData;
-		static rationalBezierCurve(controlPoints:verb.core.Data.Point[], weights?:number[]) : core.NurbsCurveData;
-		static fourPointSurface(p1:verb.core.Data.Point, p2:verb.core.Data.Point, p3:verb.core.Data.Point, p4:verb.core.Data.Point, degree?:number) : core.NurbsSurfaceData;
-		static ellipseArc(center:verb.core.Data.Point, xaxis:verb.core.Data.Point, yaxis:verb.core.Data.Point, startAngle:number, endAngle:number) : core.NurbsCurveData;
-		static arc(center:verb.core.Data.Point, xaxis:verb.core.Data.Vector, yaxis:verb.core.Data.Vector, radius:number, startAngle:number, endAngle:number) : core.NurbsCurveData;
-		static polyline(pts:verb.core.Data.Point[]) : core.NurbsCurveData;
-		static extrudedSurface(axis:verb.core.Data.Point, length:number, profile:core.NurbsCurveData) : core.NurbsSurfaceData;
-		static cylindricalSurface(axis:verb.core.Data.Point, xaxis:verb.core.Data.Point, base:verb.core.Data.Point, height:number, radius:number) : core.NurbsSurfaceData;
-		static revolvedSurface(profile:core.NurbsCurveData, center:verb.core.Data.Point, axis:verb.core.Data.Point, theta:number) : core.NurbsSurfaceData;
-		static sphericalSurface(center:verb.core.Data.Point, axis:verb.core.Data.Point, xaxis:verb.core.Data.Point, radius:number) : core.NurbsSurfaceData;
-		static conicalSurface(axis:verb.core.Data.Point, xaxis:verb.core.Data.Point, base:verb.core.Data.Point, height:number, radius:number) : core.NurbsSurfaceData;
-		static rationalInterpCurve(points:number[][], degree?:number, homogeneousPoints?:boolean, start_tangent?:verb.core.Data.Point, end_tangent?:verb.core.Data.Point) : core.NurbsCurveData;
+		static rationalBezierCurve(controlPoints:number[][], weights?:number[]) : core.NurbsCurveData;
+		static fourPointSurface(p1:number[], p2:number[], p3:number[], p4:number[], degree?:number) : core.NurbsSurfaceData;
+		static ellipseArc(center:number[], xaxis:number[], yaxis:number[], startAngle:number, endAngle:number) : core.NurbsCurveData;
+		static arc(center:number[], xaxis:number[], yaxis:number[], radius:number, startAngle:number, endAngle:number) : core.NurbsCurveData;
+		static polyline(pts:number[][]) : core.NurbsCurveData;
+		static extrudedSurface(axis:number[], length:number, profile:core.NurbsCurveData) : core.NurbsSurfaceData;
+		static cylindricalSurface(axis:number[], xaxis:number[], base:number[], height:number, radius:number) : core.NurbsSurfaceData;
+		static revolvedSurface(profile:core.NurbsCurveData, center:number[], axis:number[], theta:number) : core.NurbsSurfaceData;
+		static sphericalSurface(center:number[], axis:number[], xaxis:number[], radius:number) : core.NurbsSurfaceData;
+		static conicalSurface(axis:number[], xaxis:number[], base:number[], height:number, radius:number) : core.NurbsSurfaceData;
+		static rationalInterpCurve(points:number[][], degree?:number, homogeneousPoints?:boolean, start_tangent?:number[], end_tangent?:number[]) : core.NurbsCurveData;
 	}
 	
 	export class Modify
 	{
 		static curveReverse(curve:core.NurbsCurveData) : core.NurbsCurveData;
 		static surfaceReverse(surface:core.NurbsSurfaceData, useV?:boolean) : core.NurbsSurfaceData;
-		static knotsReverse(knots:verb.core.Data.KnotArray) : verb.core.Data.KnotArray;
+		static knotsReverse(knots:number[]) : number[];
 		static unifyCurveKnotVectors(curves:core.NurbsCurveData[]) : core.NurbsCurveData[];
 		static curveElevateDegree(curve:core.NurbsCurveData, finalDegree:number) : core.NurbsCurveData;
-		static rationalSurfaceTransform(surface:core.NurbsSurfaceData, mat:verb.core.Data.Matrix) : core.NurbsSurfaceData;
-		static rationalCurveTransform(curve:core.NurbsCurveData, mat:verb.core.Data.Matrix) : core.NurbsCurveData;
+		static rationalSurfaceTransform(surface:core.NurbsSurfaceData, mat:number[][]) : core.NurbsSurfaceData;
+		static rationalCurveTransform(curve:core.NurbsCurveData, mat:number[][]) : core.NurbsCurveData;
 		static surfaceKnotRefine(surface:core.NurbsSurfaceData, knotsToInsert:number[], useV:boolean) : core.NurbsSurfaceData;
 		static decomposeCurveIntoBeziers(curve:core.NurbsCurveData) : core.NurbsCurveData[];
 		static curveKnotRefine(curve:core.NurbsCurveData, knotsToInsert:number[]) : core.NurbsCurveData;
@@ -483,10 +516,10 @@ export namespace eval
 	
 	export class Tess
 	{
-		static rationalCurveRegularSample(curve:core.NurbsCurveData, numSamples:number, includeU:boolean) : verb.core.Data.Point[];
-		static rationalCurveRegularSampleRange(curve:core.NurbsCurveData, start:number, end:number, numSamples:number, includeU:boolean) : verb.core.Data.Point[];
-		static rationalCurveAdaptiveSample(curve:core.NurbsCurveData, tol?:number, includeU?:boolean) : verb.core.Data.Point[];
-		static rationalCurveAdaptiveSampleRange(curve:core.NurbsCurveData, start:number, end:number, tol:number, includeU:boolean) : verb.core.Data.Point[];
+		static rationalCurveRegularSample(curve:core.NurbsCurveData, numSamples:number, includeU:boolean) : number[][];
+		static rationalCurveRegularSampleRange(curve:core.NurbsCurveData, start:number, end:number, numSamples:number, includeU:boolean) : number[][];
+		static rationalCurveAdaptiveSample(curve:core.NurbsCurveData, tol?:number, includeU?:boolean) : number[][];
+		static rationalCurveAdaptiveSampleRange(curve:core.NurbsCurveData, start:number, end:number, tol:number, includeU:boolean) : number[][];
 		static rationalSurfaceNaive(surface:core.NurbsSurfaceData, divs_u:number, divs_v:number) : core.MeshData;
 		static divideRationalSurfaceAdaptive(surface:core.NurbsSurfaceData, options?:eval.Tess.AdaptiveRefinementOptions) : eval.Tess.AdaptiveRefinementNode[];
 		static rationalSurfaceAdaptive(surface:core.NurbsSurfaceData, options?:eval.Tess.AdaptiveRefinementOptions) : core.MeshData;
@@ -505,15 +538,15 @@ export namespace eval
 	
 	export class AdaptiveRefinementNode
 	{
-		constructor(srf:core.NurbsSurfaceData, corners:verb.core.Intersections.SurfacePoint[], neighbors?:eval.Tess.AdaptiveRefinementNode[]);
+		constructor(srf:core.NurbsSurfaceData, corners:eval.SurfacePoint[], neighbors?:eval.Tess.AdaptiveRefinementNode[]);
 		neighbors : eval.Tess.AdaptiveRefinementNode[];
 		isLeaf() : boolean;
-		center() : verb.core.Intersections.SurfacePoint;
+		center() : eval.SurfacePoint;
 		evalCorners() : void;
-		evalSrf(u:number, v:number, srfPt?:verb.core.Intersections.SurfacePoint) : verb.core.Intersections.SurfacePoint;
-		getEdgeCorners(edgeIndex:number) : verb.core.Intersections.SurfacePoint[];
-		getAllCorners(edgeIndex:number) : verb.core.Intersections.SurfacePoint[];
-		midpoint(index:number) : verb.core.Intersections.SurfacePoint;
+		evalSrf(u:number, v:number, srfPt?:eval.SurfacePoint) : eval.SurfacePoint;
+		getEdgeCorners(edgeIndex:number) : eval.SurfacePoint[];
+		getAllCorners(edgeIndex:number) : eval.SurfacePoint[];
+		midpoint(index:number) : eval.SurfacePoint;
 		hasBadNormals() : boolean;
 		fixNormals() : void;
 		shouldDivide(options:eval.Tess.AdaptiveRefinementOptions, currentDepth:number) : boolean;
@@ -527,13 +560,13 @@ export namespace core
 {
 	export class BoundingBox
 	{
-		constructor(pts?:verb.core.Data.Point[]);
-		min : verb.core.Data.Point;
-		max : verb.core.Data.Point;
-		fromPoint(pt:verb.core.Data.Point) : core.BoundingBox;
-		add(point:verb.core.Data.Point) : core.BoundingBox;
-		addRange(points:verb.core.Data.Point[]) : core.BoundingBox;
-		contains(point:verb.core.Data.Point, tol?:number) : boolean;
+		constructor(pts?:number[][]);
+		min : number[];
+		max : number[];
+		fromPoint(pt:number[]) : core.BoundingBox;
+		add(point:number[]) : core.BoundingBox;
+		addRange(points:number[][]) : core.BoundingBox;
+		contains(point:number[], tol?:number) : boolean;
 		intersects(bb:core.BoundingBox, tol?:number) : boolean;
 		clear() : core.BoundingBox;
 		getLongestAxis() : number;
@@ -556,63 +589,63 @@ export namespace core
 	
 	export class Plane extends core.SerializableBase
 	{
-		constructor(origin:verb.core.Data.Point, normal:verb.core.Data.Vector);
-		normal : verb.core.Data.Vector;
-		origin : verb.core.Data.Point;
+		constructor(origin:number[], normal:number[]);
+		normal : number[];
+		origin : number[];
 	}
 	
 	export class Ray extends core.SerializableBase
 	{
-		constructor(origin:verb.core.Data.Point, dir:verb.core.Data.Vector);
-		dir : verb.core.Data.Vector;
-		origin : verb.core.Data.Point;
+		constructor(origin:number[], dir:number[]);
+		dir : number[];
+		origin : number[];
 	}
 	
 	export class NurbsCurveData extends core.SerializableBase
 	{
-		constructor(degree:number, knots:number[], controlPoints:verb.core.Data.Point[]);
+		constructor(degree:number, knots:number[], controlPoints:number[][]);
 		degree : number;
-		controlPoints : verb.core.Data.Point[];
+		controlPoints : number[][];
 		knots : number[];
 	}
 	
 	export class NurbsSurfaceData extends core.SerializableBase
 	{
-		constructor(degreeU:number, degreeV:number, knotsU:verb.core.Data.KnotArray, knotsV:verb.core.Data.KnotArray, controlPoints:verb.core.Data.Point[][]);
+		constructor(degreeU:number, degreeV:number, knotsU:number[], knotsV:number[], controlPoints:number[][][]);
 		degreeU : number;
 		degreeV : number;
-		knotsU : verb.core.Data.KnotArray;
-		knotsV : verb.core.Data.KnotArray;
-		controlPoints : verb.core.Data.Point[][];
+		knotsU : number[];
+		knotsV : number[];
+		controlPoints : number[][][];
 	}
 	
 	export class MeshData extends core.SerializableBase
 	{
-		constructor(faces:verb.core.Data.Tri[], points:verb.core.Data.Point[], normals:verb.core.Data.Point[], uvs:verb.core.Data.UV[]);
-		faces : verb.core.Data.Tri[];
-		points : verb.core.Data.Point[];
-		normals : verb.core.Data.Point[];
-		uvs : verb.core.Data.UV[];
+		constructor(faces:number[][], points:number[][], normals:number[][], uvs:number[][]);
+		faces : number[][];
+		points : number[][];
+		normals : number[][];
+		uvs : number[][];
 		static empty() : core.MeshData;
 	}
 	
 	export class PolylineData extends core.SerializableBase
 	{
-		constructor(points:verb.core.Data.Point[], params:number[]);
-		points : verb.core.Data.Point[];
+		constructor(points:number[][], params:number[]);
+		points : number[][];
 		params : number[];
 	}
 	
 	export class VolumeData extends core.SerializableBase
 	{
-		constructor(degreeU:number, degreeV:number, degreeW:number, knotsU:verb.core.Data.KnotArray, knotsV:verb.core.Data.KnotArray, knotsW:verb.core.Data.KnotArray, controlPoints:verb.core.Data.Point[][][]);
+		constructor(degreeU:number, degreeV:number, degreeW:number, knotsU:number[], knotsV:number[], knotsW:number[], controlPoints:number[][][][]);
 		degreeU : number;
 		degreeV : number;
 		degreeW : number;
-		knotsU : verb.core.Data.KnotArray;
-		knotsV : verb.core.Data.KnotArray;
-		knotsW : verb.core.Data.KnotArray;
-		controlPoints : verb.core.Data.Point[][][];
+		knotsU : number[];
+		knotsV : number[];
+		knotsW : number[];
+		controlPoints : number[][][][];
 	}
 	
 	export class Pair<T1, T2>
@@ -631,28 +664,28 @@ export namespace core
 	
 	export class CurveCurveIntersection
 	{
-		constructor(point0:verb.core.Data.Point, point1:verb.core.Data.Point, u0:number, u1:number);
-		point0 : verb.core.Data.Point;
-		point1 : verb.core.Data.Point;
+		constructor(point0:number[], point1:number[], u0:number, u1:number);
+		point0 : number[];
+		point1 : number[];
 		u0 : number;
 		u1 : number;
 	}
 	
 	export class CurveSurfaceIntersection
 	{
-		constructor(u:number, uv:verb.core.Data.UV, curvePoint:verb.core.Data.Point, surfacePoint:verb.core.Data.Point);
+		constructor(u:number, uv:number[], curvePoint:number[], surfacePoint:number[]);
 		u : number;
-		uv : verb.core.Data.UV;
-		curvePoint : verb.core.Data.Point;
-		surfacePoint : verb.core.Data.Point;
+		uv : number[];
+		curvePoint : number[];
+		surfacePoint : number[];
 	}
 	
 	export class MeshIntersectionPoint
 	{
-		constructor(uv0:verb.core.Data.UV, uv1:verb.core.Data.UV, point:verb.core.Data.Point, faceIndex0:number, faceIndex1:number);
-		uv0 : verb.core.Data.UV;
-		uv1 : verb.core.Data.UV;
-		point : verb.core.Data.Point;
+		constructor(uv0:number[], uv1:number[], point:number[], faceIndex0:number, faceIndex1:number);
+		uv0 : number[];
+		uv1 : number[];
+		point : number[];
 		faceIndex0 : number;
 		faceIndex1 : number;
 		opp : core.MeshIntersectionPoint;
@@ -662,27 +695,27 @@ export namespace core
 	
 	export class PolylineMeshIntersection
 	{
-		constructor(point:verb.core.Data.Point, u:number, uv:verb.core.Data.UV, polylineIndex:number, faceIndex:number);
-		point : verb.core.Data.Point;
+		constructor(point:number[], u:number, uv:number[], polylineIndex:number, faceIndex:number);
+		point : number[];
 		u : number;
-		uv : verb.core.Data.UV;
+		uv : number[];
 		polylineIndex : number;
 		faceIndex : number;
 	}
 	
 	export class SurfaceSurfaceIntersectionPoint
 	{
-		constructor(uv0:verb.core.Data.UV, uv1:verb.core.Data.UV, point:verb.core.Data.Point, dist:number);
-		uv0 : verb.core.Data.UV;
-		uv1 : verb.core.Data.UV;
-		point : verb.core.Data.Point;
+		constructor(uv0:number[], uv1:number[], point:number[], dist:number);
+		uv0 : number[];
+		uv1 : number[];
+		point : number[];
 		dist : number;
 	}
 	
 	export class TriSegmentIntersection
 	{
-		constructor(point:verb.core.Data.Point, s:number, t:number, r:number);
-		point : verb.core.Data.Point;
+		constructor(point:number[], s:number, t:number, r:number);
+		point : number[];
 		s : number;
 		t : number;
 		p : number;
@@ -690,29 +723,29 @@ export namespace core
 	
 	export class CurveTriPoint
 	{
-		constructor(u:number, point:verb.core.Data.Point, uv:verb.core.Data.UV);
+		constructor(u:number, point:number[], uv:number[]);
 		u : number;
-		uv : verb.core.Data.UV;
-		point : verb.core.Data.Point;
+		uv : number[];
+		point : number[];
 	}
 	
 	export class CurvePoint
 	{
-		constructor(u:number, pt:verb.core.Data.Point);
+		constructor(u:number, pt:number[]);
 		u : number;
-		pt : verb.core.Data.Point;
+		pt : number[];
 	}
 	
 	export class KdTree<T>
 	{
-		constructor(points:core.KdTree.KdPoint<T>[], distanceFunction:(arg0:verb.core.Data.Point, arg1:verb.core.Data.Point) => number);
-		nearest(point:verb.core.Data.Point, maxNodes:number, maxDistance:number) : core.Pair<core.KdTree.KdPoint<T>, number>[];
+		constructor(points:core.KdTree.KdPoint<T>[], distanceFunction:(arg0:number[], arg1:number[]) => number);
+		nearest(point:number[], maxNodes:number, maxDistance:number) : core.Pair<core.KdTree.KdPoint<T>, number>[];
 	}
 	
 	export class KdPoint<T>
 	{
-		constructor(point:verb.core.Data.Point, obj:T);
-		point : verb.core.Data.Point;
+		constructor(point:number[], obj:T);
+		point : number[];
 		obj : T;
 	}
 	
@@ -728,29 +761,40 @@ export namespace core
 	
 	export class Mat
 	{
-		static mul(a:number, b:verb.core.Data.Matrix) : verb.core.Data.Matrix;
-		static mult(x:verb.core.Data.Matrix, y:verb.core.Data.Matrix) : verb.core.Data.Matrix;
-		static add(a:verb.core.Data.Matrix, b:verb.core.Data.Matrix) : verb.core.Data.Matrix;
-		static div(a:verb.core.Data.Matrix, b:number) : verb.core.Data.Matrix;
-		static sub(a:verb.core.Data.Matrix, b:verb.core.Data.Matrix) : verb.core.Data.Matrix;
-		static dot(a:verb.core.Data.Matrix, b:verb.core.Data.Vector) : verb.core.Data.Vector;
-		static identity(n:number) : verb.core.Data.Matrix;
+		static mul(a:number, b:number[][]) : number[][];
+		static mult(x:number[][], y:number[][]) : number[][];
+		static add(a:number[][], b:number[][]) : number[][];
+		static div(a:number[][], b:number) : number[][];
+		static sub(a:number[][], b:number[][]) : number[][];
+		static dot(a:number[][], b:number[]) : number[];
+		static identity(n:number) : number[][];
 		static transpose<T>(a:T[][]) : T[][];
-		static solve(A:verb.core.Data.Matrix, b:verb.core.Data.Vector) : verb.core.Data.Vector;
+		static solve(A:number[][], b:number[]) : number[];
 	}
 	
 	export class Mesh
 	{
-		static getTriangleNorm(points:verb.core.Data.Point[], tri:verb.core.Data.Tri) : verb.core.Data.Point;
+		static getTriangleNorm(points:number[][], tri:number[]) : number[];
 		static makeMeshAabb(mesh:core.MeshData, faceIndices:number[]) : core.BoundingBox;
 		static sortTrianglesOnLongestAxis(bb:core.BoundingBox, mesh:core.MeshData, faceIndices:number[]) : number[];
-		static getTriangleCentroid(points:verb.core.Data.Point[], tri:verb.core.Data.Tri) : verb.core.Data.Point;
-		static triangleUVFromPoint(mesh:core.MeshData, faceIndex:number, f:verb.core.Data.Point) : verb.core.Data.UV;
+		static getTriangleCentroid(points:number[][], tri:number[]) : number[];
+		static triangleUVFromPoint(mesh:core.MeshData, faceIndex:number, f:number[]) : number[];
 	}
 	
 	export class Minimizer
 	{
-		static uncmin(f:(arg:verb.core.Data.Vector) => number, x0:verb.core.Data.Vector, tol?:number, gradient?:(arg:verb.core.Data.Vector) => verb.core.Data.Vector, maxit?:number) : core.Minimizer.MinimizationResult;
+		static uncmin(f:(arg:number[]) => number, x0:number[], tol?:number, gradient?:(arg:number[]) => number[], maxit?:number) : core.Minimizer.MinimizationResult;
+	}
+	
+	export class MinimizationResult
+	{
+		constructor(solution:number[], value:number, gradient:number[], invHessian:number[][], iterations:number, message:string);
+		solution : number[];
+		value : number;
+		gradient : number[];
+		invHessian : number[][];
+		iterations : number;
+		message : string;
 	}
 	
 	export class Deserializer
@@ -760,12 +804,12 @@ export namespace core
 	
 	export class Trig
 	{
-		static isPointInPlane(pt:verb.core.Data.Point, p:core.Plane, tol:number) : boolean;
-		static distToSegment(a:verb.core.Data.Point, b:verb.core.Data.Point, c:verb.core.Data.Point) : number;
+		static isPointInPlane(pt:number[], p:core.Plane, tol:number) : boolean;
+		static distToSegment(a:number[], b:number[], c:number[]) : number;
 		static rayClosestPoint(pt:number[], o:number[], r:number[]) : number[];
 		static distToRay(pt:number[], o:number[], r:number[]) : number;
 		static threePointsAreFlat(p1:number[], p2:number[], p3:number[], tol:number) : boolean;
-		static segmentClosestPoint(pt:verb.core.Data.Point, segpt0:verb.core.Data.Point, segpt1:verb.core.Data.Point, u0:number, u1:number) : { pt : verb.core.Data.Point; u : number; };
+		static segmentClosestPoint(pt:number[], segpt0:number[], segpt1:number[], u0:number, u1:number) : { pt : number[]; u : number; };
 	}
 	
 	export class Vec
@@ -781,7 +825,7 @@ export namespace core
 		static max(arr:number[]) : number;
 		static all(arr:boolean[]) : boolean;
 		static finite(arr:number[]) : boolean[];
-		static onRay(origin:verb.core.Data.Point, dir:verb.core.Data.Vector, u:number) : number[];
+		static onRay(origin:number[], dir:number[], u:number) : number[];
 		static lerp(i:number, u:number[], v:number[]) : number[];
 		static normalized(arr:number[]) : number[];
 		static cross(u:number[], v:number[]) : number[];

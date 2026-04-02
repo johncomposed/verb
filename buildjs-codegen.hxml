@@ -4,4 +4,14 @@
 -cp src
 -js build/js/verbHaxe.js
 -dce std
---macro CodeGen.typescriptExtern('build/js/verb-nurbs.generated.d.ts')
+
+# Include types that lack @:expose but are part of the public API
+# Note: verb.core.Minimizer and verb.eval.Intersect cannot be included because
+# their sub-types (MinimizationResult, IBoundingBoxTree) get named after the module,
+# conflicting with the real Minimizer/Intersect classes. These are injected by fix-dts.js.
+--macro CodeGen.include('verb.geom.ICurve')
+--macro CodeGen.include('verb.geom.ISurface')
+--macro CodeGen.include('verb.core.Serialization')
+--macro CodeGen.include('verb.core.Intersections')
+
+--macro CodeGen.typescriptExtern('build/js/verb-nurbs.generated.d.ts', null, 'codegen-mapper.txt')

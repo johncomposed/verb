@@ -135,6 +135,7 @@ class CurveTriPoint {
     }
 }
 
+@:expose("eval.SurfacePoint")
 class SurfacePoint {
 
     public var uv : UV;

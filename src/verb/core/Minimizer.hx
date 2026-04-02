@@ -144,6 +144,7 @@ class Minimizer {
 
 }
 
+@:expose("core.MinimizationResult")
 class MinimizationResult {
 
     public var solution : Vector;
