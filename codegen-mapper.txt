@@ -1,10 +1,10 @@
 # Resolve Haxe typedefs to TypeScript types
-verb.core.Data.Point => number[]
-verb.core.Data.Vector => number[]
-verb.core.Data.Matrix => number[][]
-verb.core.Data.KnotArray => number[]
-verb.core.Data.Tri => number[]
-verb.core.Data.UV => number[]
+verb.core.Data.Point => Point
+verb.core.Data.Vector => Vector
+verb.core.Data.Matrix => Matrix
+verb.core.Data.KnotArray => KnotArray
+verb.core.Data.Tri => Tri
+verb.core.Data.UV => UV
 
 # Strip verb. prefix from interface references
 verb.geom.ICurve => geom.ICurve

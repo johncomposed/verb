@@ -35,6 +35,7 @@ for (const qn of src.getDescendantsOfKind(SyntaxKind.QualifiedName)) {
     replacements.push({ node: qn, text: `${parts[0]}.${parts[2]}` });
   }
 }
+// Log the replacements for sanity checking
 console.log([...new Set(replacements.map(r => `${r.node.getText()} -> ${r.text}`))].join('\n'));
 // Replace in reverse order so earlier positions stay valid
 for (const { node, text } of replacements.reverse()) {
@@ -42,31 +43,55 @@ for (const { node, text } of replacements.reverse()) {
 }
 
 // ---------------------------------------------------------------------------
-// 2. Inject stub types that codegen cannot generate
+// 2. Remove 'export' from top-level namespaces (they'll live inside declare module)
 // ---------------------------------------------------------------------------
-
-// AsyncBase: promhx's internal base class, not @:expose'd
-const promhxNs = src.getModules().find(m => m.getName() === 'promhx');
-if (promhxNs) {
-  promhxNs.insertStatements(0, `export class AsyncBase<T> {}`);
-}
-
-// IBoundingBoxTree: Haxe interface whose module name conflicts with eval.Intersect class
-const evalNs = src.getModules().find(m => m.getName() === 'eval');
-if (evalNs) {
-  evalNs.insertStatements(0, [
-    `\texport interface IBoundingBoxTree<T> {`,
-    `\t\tboundingBox(): core.BoundingBox;`,
-    `\t\tsplit(): [IBoundingBoxTree<T>, IBoundingBoxTree<T>];`,
-    `\t\tyield(): T;`,
-    `\t\tindivisible(tolerance: number): boolean;`,
-    `\t\tempty(): boolean;`,
-    `\t}`,
-  ].join('\n'));
+for (const ns of src.getModules()) {
+  if (ns.hasExportKeyword()) {
+    ns.setIsExported(false);
+  }
 }
 
 // ---------------------------------------------------------------------------
-// 3. Write the final .d.ts wrapped in declare module 'verb-nurbs'
+// 3. Inject stub types that codegen cannot generate
+// ---------------------------------------------------------------------------
+
+// These stubs exist because codegen can't emit them (AsyncBase is from an
+// unexposed external lib; IBoundingBoxTree's module name conflicts with a class).
+// If codegen ever learns to emit them, these injections should be removed.
+const stubs: { ns: string; name: string; body: string }[] = [
+  {
+    ns: 'promhx',
+    name: 'AsyncBase',
+    body: `export class AsyncBase<T> {}`,
+  },
+  {
+    ns: 'eval',
+    name: 'IBoundingBoxTree',
+    body: [
+      `export interface IBoundingBoxTree<T> {`,
+      `\tboundingBox(): core.BoundingBox;`,
+      `\tsplit(): [IBoundingBoxTree<T>, IBoundingBoxTree<T>];`,
+      `\tyield(): T;`,
+      `\tindivisible(tolerance: number): boolean;`,
+      `\tempty(): boolean;`,
+      `}`,
+    ].join('\n'),
+  },
+];
+
+for (const stub of stubs) {
+  const ns = src.getModules().find(m => m.getName() === stub.ns);
+  if (!ns) continue;
+  const existing = ns.getInterface(stub.name) || ns.getClass(stub.name);
+  if (existing) {
+    console.warn(`Warning: codegen now emits ${stub.ns}.${stub.name} — remove its stub from fix-dts.ts`);
+    continue;
+  }
+  ns.insertStatements(0, stub.body);
+}
+
+// ---------------------------------------------------------------------------
+// 4. Write the final .d.ts wrapped in declare module 'verb-nurbs'
 // ---------------------------------------------------------------------------
 
 const outProject = new Project({ useInMemoryFileSystem: true });
@@ -95,6 +120,10 @@ for (const [name, type] of typedefs) {
 // Insert the codegen output (namespaces with all classes) into the module
 mod.addStatements(src.getFullText());
 
+// Re-export all namespaces as types seperate from the verbs interface
+// e.g.   export type { promhx, core, eval, exe, geom };
+mod.addStatements(`export type { ${[...topLevelNamespaces].join(', ')} };`);
+
 // Add the Verb interface and default export
 mod.addInterface({
   name: 'Verb',
@@ -102,11 +131,7 @@ mod.addInterface({
     { name: 'EPSILON', type: 'number' },
     { name: 'TOLERANCE', type: 'number' },
     { name: 'VERSION', type: 'string' },
-    { name: 'promhx', type: 'typeof promhx' },
-    { name: 'core', type: 'typeof core' },
-    { name: 'eval', type: 'typeof eval' },
-    { name: 'exe', type: 'typeof exe' },
-    { name: 'geom', type: 'typeof geom' },
+    ...[...topLevelNamespaces].map(ns => ({ name: ns, type: `typeof ${ns}` })),
   ],
 });
 
