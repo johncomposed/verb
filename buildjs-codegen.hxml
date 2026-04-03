@@ -2,7 +2,7 @@
 -lib codegen
 -main verb.Verb
 -cp src
--js build/js/verbHaxe.js
+-js build/js/verbHaxe.codegen.js
 -dce std
 
 # Include types that lack @:expose but are part of the public API
