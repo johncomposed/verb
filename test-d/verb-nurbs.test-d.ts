@@ -403,6 +403,30 @@ expectType<promhx.Promise<core.CurveCurveIntersection[]>>(verb.geom.Intersect.cu
 expectType<promhx.Promise<core.CurveSurfaceIntersection[]>>(verb.geom.Intersect.curveAndSurfaceAsync(curve, surface));
 expectType<promhx.Promise<geom.NurbsCurve[]>>(verb.geom.Intersect.surfacesAsync(surface, surface));
 
+// SurfacePoint
+const surfPt = new verb.eval.SurfacePoint([0, 0, 0], [0, 0, 1], [0.5, 0.5]);
+expectType<number[]>(surfPt.point);
+expectType<number[]>(surfPt.normal);
+expectType<number[]>(surfPt.uv);
+expectType<number>(surfPt.id);
+expectType<boolean>(surfPt.degen);
+expectType<verbEval.SurfacePoint>(verb.eval.SurfacePoint.fromUv(0.5, 0.5));
+
+// AdaptiveRefinementNode references SurfacePoint
+const refineNode = new verb.eval.AdaptiveRefinementNode(surfaceData, [surfPt, surfPt, surfPt, surfPt]);
+expectType<verbEval.SurfacePoint>(refineNode.center());
+
+// IBoundingBoxTree (used in eval.Intersect signatures)
+declare const meshBBTree: verbEval.IBoundingBoxTree<number>;
+expectType<core.BoundingBox>(meshBBTree.boundingBox());
+expectType<boolean>(meshBBTree.empty());
+expectType<boolean>(meshBBTree.indivisible(0.001));
+expectType<number>(meshBBTree.yield());
+
+// ISerializable interface conformance
+const serializable: geom.ISerializable = curve;
+expectType<string>(serializable.serialize());
+
 // =============================================================================
 // exe namespace
 // =============================================================================
@@ -417,3 +441,6 @@ const promise = deferred.promise();
 expectType<promhx.Promise<number>>(promise);
 const mapped = promise.then((x: number) => x.toString());
 expectType<promhx.Promise<string>>(mapped);
+
+// AsyncBase (promhx base class)
+expectAssignable<promhx.AsyncBase<number>>(promise);
