@@ -19,14 +19,16 @@ const raw = require('fs').readFileSync(INPUT, 'utf-8');
 const src = project.createSourceFile('input.d.ts', raw);
 
 
-// These are top-level type aliases that codegen cannot generate. Up here because they also need to go in the core namespace.
+// These are top-level type aliases that codegen cannot generate. 
+// Up here because they also need to go in the core namespace.
+// Note: we could also add in strict versions that are branded if that ends up being actually helpful.
 const typedefs = [
-  ['Point', 'Brand<number[], "Point">'],
-  ['Vector', 'Brand<number[], "Vector">'],
-  ['Matrix', 'Brand<number[][], "Matrix">'],
-  ['KnotArray', 'Brand<number[], "KnotArray">'],
-  ['Tri', 'Brand<number[], "Tri">'],
-  ['UV', 'Brand<number[], "UV">'],
+  ['Point', 'number[]'],
+  ['Vector', 'number[]'],
+  ['Matrix', 'number[][]'],
+  ['KnotArray', 'number[]'],
+  ['Tri', 'number[]'],
+  ['UV', 'number[]'],
 ];
 
 // ---------------------------------------------------------------------------
@@ -120,13 +122,8 @@ const mod = outFile.addModule({
   hasDeclareKeyword: true,
 });
 
-// Add the Brand helper so type aliases below can be nominal
-mod.addStatements([
-  `const brand: unique symbol;`,
-  `type Brand<T, TBrand> = T & { readonly [brand]: TBrand };`,
-].join('\n'));
 
-// Add top-level type aliases as branded types
+// Add top-level type aliases
 
 for (const [name, type] of typedefs) {
   mod.addTypeAlias({ name, type });

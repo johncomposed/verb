@@ -1,12 +1,10 @@
 declare module 'verb-nurbs' {
-    const brand: unique symbol;
-    type Brand<T, TBrand> = T & { readonly [brand]: TBrand };
-    type Point = Brand<number[], "Point">;
-    type Vector = Brand<number[], "Vector">;
-    type Matrix = Brand<number[][], "Matrix">;
-    type KnotArray = Brand<number[], "KnotArray">;
-    type Tri = Brand<number[], "Tri">;
-    type UV = Brand<number[], "UV">;
+    type Point = number[];
+    type Vector = number[];
+    type Matrix = number[][];
+    type KnotArray = number[];
+    type Tri = number[];
+    type UV = number[];
     namespace promhx
     {
         export class AsyncBase<T> {}
