@@ -12,13 +12,13 @@ typedef Point = Array<Float>;
 //
 // So, in JavaScript, one would write simply `[1,0,0]` to create the a unit vector in the x direction
 
-typedef Vector = Array<Float>
+typedef Vector = Array<Float>;
 
 // `Matrix` is represented by a nested array of floating point number arrays
 //
 // So, in JavaScript, one would write simply `[[1,0],[0,1]]` to create a 2x2 identity matrix
 
-typedef Matrix = Array<Array<Float>>
+typedef Matrix = Array<Array<Float>>;
 
 // A `KnotArray` is a non-decreasing sequence of floating point . Use the methods in `Check` to validate `KnotArray`'s
 

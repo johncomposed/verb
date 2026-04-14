@@ -18,6 +18,17 @@ const project = new Project({ useInMemoryFileSystem: true });
 const raw = require('fs').readFileSync(INPUT, 'utf-8');
 const src = project.createSourceFile('input.d.ts', raw);
 
+
+// These are top-level type aliases that codegen cannot generate. Up here because they also need to go in the core namespace.
+const typedefs = [
+  ['Point', 'Brand<number[], "Point">'],
+  ['Vector', 'Brand<number[], "Vector">'],
+  ['Matrix', 'Brand<number[][], "Matrix">'],
+  ['KnotArray', 'Brand<number[], "KnotArray">'],
+  ['Tri', 'Brand<number[], "Tri">'],
+  ['UV', 'Brand<number[], "UV">'],
+];
+
 // ---------------------------------------------------------------------------
 // 1. Flatten 3-part qualified names (e.g. eval.Divide.CurveLengthSample -> eval.CurveLengthSample)
 // ---------------------------------------------------------------------------
@@ -77,6 +88,11 @@ const stubs: { ns: string; name: string; body: string }[] = [
       `}`,
     ].join('\n'),
   },
+  {
+    ns: 'core',
+    name: 'CoreExports',
+    body: `export { ${typedefs.map(([name, type]) => name).join(', ')} };`,
+  }
 ];
 
 for (const stub of stubs) {
@@ -104,15 +120,14 @@ const mod = outFile.addModule({
   hasDeclareKeyword: true,
 });
 
-// Add top-level type aliases
-const typedefs = [
-  ['Point', 'number[]'],
-  ['Vector', 'number[]'],
-  ['Matrix', 'number[][]'],
-  ['KnotArray', 'number[]'],
-  ['Tri', 'number[]'],
-  ['UV', 'number[]'],
-];
+// Add the Brand helper so type aliases below can be nominal
+mod.addStatements([
+  `const brand: unique symbol;`,
+  `type Brand<T, TBrand> = T & { readonly [brand]: TBrand };`,
+].join('\n'));
+
+// Add top-level type aliases as branded types
+
 for (const [name, type] of typedefs) {
   mod.addTypeAlias({ name, type });
 }
