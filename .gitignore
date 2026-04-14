@@ -13,5 +13,7 @@ lib-cov
 *.swp
 *.swo
 node_modules/
+build/js/verbHaxe.codegen.js
 *.VC.db
 *.VC.db-wal
+.claude/settings.local.json
