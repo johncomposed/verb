@@ -16,6 +16,7 @@ const EXAMPLES = [
   { name: 'revolvedSurface', label: 'Revolved Surface' },
   { name: 'surface', label: 'NURBS Surface' },
   { name: 'surfaceAdaptiveTessellation', label: 'Surface Adaptive Tessellation' },
+  { name: 'surfaceDeform', label: 'Surface Deform by Sphere (Spacebar)', r3fOnly: true },
   { name: 'surfaceBoundaries', label: 'Surface Boundaries' },
   { name: 'surfaceClosestPoint', label: 'Surface Closest Point' },
   { name: 'surfaceIntersection', label: 'Surface Intersection' },
@@ -43,7 +44,7 @@ export function App() {
         </p>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: 12 }}>
-          {EXAMPLES.map(({ name, label }) => (
+          {EXAMPLES.map(({ name, label, r3fOnly }) => (
             <div
               key={name}
               style={{
@@ -57,20 +58,22 @@ export function App() {
                 {label}
               </div>
               <div style={{ display: 'flex', gap: 10 }}>
-                <Link
-                  to={`/threejs/${name}`}
-                  style={{
-                    color: '#6ec6ff',
-                    textDecoration: 'none',
-                    fontSize: 13,
-                    padding: '4px 10px',
-                    background: 'rgba(110,198,255,0.1)',
-                    borderRadius: 4,
-                    border: '1px solid rgba(110,198,255,0.2)',
-                  }}
-                >
-                  Three.js
-                </Link>
+                {!r3fOnly && (
+                  <Link
+                    to={`/threejs/${name}`}
+                    style={{
+                      color: '#6ec6ff',
+                      textDecoration: 'none',
+                      fontSize: 13,
+                      padding: '4px 10px',
+                      background: 'rgba(110,198,255,0.1)',
+                      borderRadius: 4,
+                      border: '1px solid rgba(110,198,255,0.2)',
+                    }}
+                  >
+                    Three.js
+                  </Link>
+                )}
                 <Link
                   to={`/r3f/${name}`}
                   style={{

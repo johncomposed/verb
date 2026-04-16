@@ -21,6 +21,7 @@ const RevolvedSurface = React.lazy(() => import('./r3f/RevolvedSurface'));
 const Surface = React.lazy(() => import('./r3f/Surface'));
 const SurfaceAdaptiveTessellation = React.lazy(() => import('./r3f/SurfaceAdaptiveTessellation'));
 const SurfaceBoundaries = React.lazy(() => import('./r3f/SurfaceBoundaries'));
+const SurfaceDeform = React.lazy(() => import('./r3f/SurfaceDeform'));
 const SurfaceClosestPoint = React.lazy(() => import('./r3f/SurfaceClosestPoint'));
 const SurfaceIntersection = React.lazy(() => import('./r3f/SurfaceIntersection'));
 const SurfaceIsocurves = React.lazy(() => import('./r3f/SurfaceIsocurves'));
@@ -68,6 +69,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route path="/r3f/surface" element={<Surface />} />
           <Route path="/r3f/surfaceAdaptiveTessellation" element={<SurfaceAdaptiveTessellation />} />
           <Route path="/r3f/surfaceBoundaries" element={<SurfaceBoundaries />} />
+          <Route path="/r3f/surfaceDeform" element={<SurfaceDeform />} />
           <Route path="/r3f/surfaceClosestPoint" element={<SurfaceClosestPoint />} />
           <Route path="/r3f/surfaceIntersection" element={<SurfaceIntersection />} />
           <Route path="/r3f/surfaceIsocurves" element={<SurfaceIsocurves />} />
