@@ -17,5 +17,6 @@ export { init as surfaceBoundaries } from './surfaceBoundaries';
 export { init as surfaceClosestPoint } from './surfaceClosestPoint';
 export { init as surfaceIntersection } from './surfaceIntersection';
 export { init as surfaceIsocurves } from './surfaceIsocurves';
+export { init as surfaceMerge } from './surfaceMerge';
 export { init as surfaceSplit } from './surfaceSplit';
 export { init as sweptSurface } from './sweptSurface';

@@ -20,6 +20,7 @@ const EXAMPLES = [
   { name: 'surfaceClosestPoint', label: 'Surface Closest Point' },
   { name: 'surfaceIntersection', label: 'Surface Intersection' },
   { name: 'surfaceIsocurves', label: 'Surface Isocurves' },
+  { name: 'surfaceMerge', label: 'Surface Merge (inverse of Split)' },
   { name: 'surfaceSplit', label: 'Surface Split' },
   { name: 'sweptSurface', label: 'Swept Surface' },
 ];

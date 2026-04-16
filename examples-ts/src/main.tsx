@@ -24,6 +24,7 @@ const SurfaceBoundaries = React.lazy(() => import('./r3f/SurfaceBoundaries'));
 const SurfaceClosestPoint = React.lazy(() => import('./r3f/SurfaceClosestPoint'));
 const SurfaceIntersection = React.lazy(() => import('./r3f/SurfaceIntersection'));
 const SurfaceIsocurves = React.lazy(() => import('./r3f/SurfaceIsocurves'));
+const SurfaceMerge = React.lazy(() => import('./r3f/SurfaceMerge'));
 const SurfaceSplit = React.lazy(() => import('./r3f/SurfaceSplit'));
 const SweptSurface = React.lazy(() => import('./r3f/SweptSurface'));
 
@@ -32,8 +33,8 @@ const THREEJS_EXAMPLES = [
   'curveIntersection', 'curveReverse', 'curveSplit', 'cylindricalSurface',
   'extrudedSurface', 'loftedSurface', 'meshIntersection', 'meshSlicing',
   'revolvedSurface', 'surface', 'surfaceAdaptiveTessellation', 'surfaceBoundaries',
-  'surfaceClosestPoint', 'surfaceIntersection', 'surfaceIsocurves', 'surfaceSplit',
-  'sweptSurface',
+  'surfaceClosestPoint', 'surfaceIntersection', 'surfaceIsocurves', 'surfaceMerge',
+  'surfaceSplit', 'sweptSurface',
 ] as const;
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -70,6 +71,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route path="/r3f/surfaceClosestPoint" element={<SurfaceClosestPoint />} />
           <Route path="/r3f/surfaceIntersection" element={<SurfaceIntersection />} />
           <Route path="/r3f/surfaceIsocurves" element={<SurfaceIsocurves />} />
+          <Route path="/r3f/surfaceMerge" element={<SurfaceMerge />} />
           <Route path="/r3f/surfaceSplit" element={<SurfaceSplit />} />
           <Route path="/r3f/sweptSurface" element={<SweptSurface />} />
         </Routes>
