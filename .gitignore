@@ -18,3 +18,4 @@ build/js/verbHaxe.codegen.js
 *.VC.db-wal
 .claude/settings.local.json
 examples-ts/tsconfig.tsbuildinfo
+tmp
